@@ -1,0 +1,4 @@
+scan_*.txt
+__pycache__/
+*.pyc
+.venv/
