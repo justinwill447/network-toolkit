@@ -60,6 +60,39 @@ def ping_host():
     except Exception as error:
         print(f"\nAn error occurred: {error}")
 
+def get_service_name(port):
+    common_services = {
+        20: "FTP Data",
+        21: "FTP",
+        22: "SSH",
+        23: "Telnet",
+        25: "SMTP",
+        53: "DNS",
+        67: "DHCP",
+        68: "DHCP",
+        80: "HTTP",
+        110: "POP3",
+        123: "NTP",
+        135: "MSRPC",
+        139: "NetBIOS",
+        143: "IMAP",
+        161: "SNMP",
+        389: "LDAP",
+        443: "HTTPS",
+        445: "SMB",
+        587: "SMTP",
+        636: "LDAPS",
+        993: "IMAPS",
+        995: "POP3S",
+        1433: "MSSQL",
+        3306: "MySQL",
+        3389: "RDP",
+        5432: "PostgreSQL",
+        8080: "HTTP Alternate"
+    }
+
+    return common_services.get(port, "Unknown")
+
 def port_scanner():
     print("\n--- Port Scanner ---")
 
@@ -88,8 +121,9 @@ def port_scanner():
             result = sock.connect_ex((target_ip, port))
 
             if result == 0:
-                print(f"[OPEN] Port {port}")
-                open_ports.append(port)
+               service = get_service_name(port)
+               print(f"[OPEN] Port {port:<5} {service}")
+               open_ports.append((port, service))
 
             sock.close()
 
@@ -117,8 +151,8 @@ def port_scanner():
                 if open_ports:
                     report.write("Open TCP Ports:\n")
 
-                    for port in open_ports:
-                        report.write(f"- {port}\n")
+                    for port, service in open_ports:
+                        report.write(f"- Port {port}: {service}\n")
                 else:
                     report.write("No open TCP ports were found.\n")
 
