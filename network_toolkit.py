@@ -93,6 +93,52 @@ def get_service_name(port):
 
     return common_services.get(port, "Unknown")
 
+def grab_banner(target_ip, port):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+
+        sock.connect((target_ip, port))
+
+        try:
+            banner = sock.recv(1024).decode(errors="ignore").strip()
+        except socket.timeout:
+            banner = ""
+
+        sock.close()
+
+        return banner
+
+    except Exception:
+        return ""
+
+def probe_http(target_ip, port):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        sock.connect((target_ip, port))
+
+        request = (
+            "HEAD / HTTP/1.1\r\n"
+            f"Host: {target_ip}\r\n"
+            "Connection: close\r\n"
+            "\r\n"
+        )
+
+        sock.sendall(request.encode())
+
+        response = sock.recv(4096).decode(errors="ignore")
+        sock.close()
+
+        for line in response.splitlines():
+            if line.lower().startswith("server:"):
+                return line.split(":", 1)[1].strip()
+
+        return "HTTP detected"
+
+    except Exception:
+        return ""
+
 def port_scanner():
     print("\n--- Port Scanner ---")
 
@@ -121,9 +167,22 @@ def port_scanner():
             result = sock.connect_ex((target_ip, port))
 
             if result == 0:
-               service = get_service_name(port)
-               print(f"[OPEN] Port {port:<5} {service}")
-               open_ports.append((port, service))
+                service = get_service_name(port)
+                banner = grab_banner(target_ip, port)
+                http_server = ""
+
+                if port in [80, 8080, 8000]:
+                    http_server = probe_http(target_ip, port)
+
+                print(f"[OPEN] Port {port:<5} {service}")
+
+                if banner:
+                    print(f"       Banner: {banner}")
+
+                if http_server:
+                    print(f"       Server: {http_server}")
+
+                open_ports.append((port, service, banner, http_server))
 
             sock.close()
 
@@ -151,8 +210,14 @@ def port_scanner():
                 if open_ports:
                     report.write("Open TCP Ports:\n")
 
-                    for port, service in open_ports:
+                    for port, service, banner, http_server in open_ports:
                         report.write(f"- Port {port}: {service}\n")
+
+                        if banner:
+                            report.write(f"  Banner: {banner}\n")
+
+                        if http_server:
+                            report.write(f"  Server: {http_server}\n")
                 else:
                     report.write("No open TCP ports were found.\n")
 
