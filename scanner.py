@@ -1,6 +1,6 @@
 import socket
 import time
-
+from reporting import save_scan_report
 
 def get_service_name(port):
     common_services = {
@@ -137,38 +137,19 @@ def port_scanner():
         save_choice = input("\nSave results to a file? (y/n): ").strip().lower()
 
         if save_choice == "y":
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            filename = f"scan_{timestamp}.txt"
-
-            with open(filename, "w") as report:
-                report.write("NETWORK TOOLKIT PORT SCAN REPORT\n")
-                report.write("=" * 40 + "\n")
-                report.write(f"Target: {target}\n")
-                report.write(f"IP Address: {target_ip}\n")
-                report.write(f"Port Range: {start_port}-{end_port}\n")
-                report.write(f"Scan Time: {elapsed_time:.2f} seconds\n\n")
-
-                if open_ports:
-                    report.write("Open TCP Ports:\n")
-
-                    for port, service, banner, http_server in open_ports:
-                        report.write(f"- Port {port}: {service}\n")
-
-                        if banner:
-                            report.write(f"  Banner: {banner}\n")
-
-                        if http_server:
-                            report.write(f"  Server: {http_server}\n")
-                else:
-                    report.write("No open TCP ports were found.\n")
-
-            print(f"\nResults saved as: {filename}")
-
+            save_scan_report(
+                target,
+                target_ip,
+                start_port,
+                end_port,
+                open_ports,
+                elapsed_time
+            )
     except ValueError:
-        print("\nPorts must be numbers.")
+            print("\nPlease enter valid port numbers.")
 
     except socket.gaierror:
-        print("\nCould not resolve that hostname.")
+            print("\nCould not resolve the target hostname.")
 
     except KeyboardInterrupt:
-        print("\nScan cancelled.")
+            print("\nScan cancelled.")
